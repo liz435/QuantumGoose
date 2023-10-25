@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 from time import sleep
-import sys
+import serial
 
 class Goose:
     def __init__(self, button_pin = int,
@@ -17,6 +17,7 @@ class Goose:
         self.pairs = pairs
         self.state = ['stop', 'spin']
         self.index_state = 0
+        self.ser = serial.Serial('/dev/ttyACM0', 9600)
 
     def honk(self):
         print(f"{self.name} honks")
@@ -82,10 +83,13 @@ class Goose:
             pressed = False
             print("button pressed")
             self.index_state += 1
-            self.mount_mode(self.state[self.index_state])
+            return True
         else:
             return False
         
+
+    def switch_mode(self):
+        self.mount_mode(self.state[self.index_state])
     
     def mount_mode(self,modes):
         cases = {
@@ -97,21 +101,45 @@ class Goose:
             code_block()
 
     def stepper_spin(self):
-        pass
+        self.ser.write(b'start\n')
+        
 
     def stepper_stop(self):
+        self.ser.write(b'stop\n')
+        
+    def listener(self):
+
+        if self.ser.in_waiting > 0:
+            line = self.ser.readline().decode('utf-8').rstrip()
+            print(line)
+            return line
+    
+    def stepper_degree(self,data):
+        print(data)
+        
+        degree = int(data)
+
+        for i in range(0, 360, 45):
+            if degree is not None and degree >= i and degree <= i + 45:
+                return i + 45
+
+        return None
+        
+    def determine_goose(self,dgree = int):
         pass
 
-    def stepper_degree(self):
-        pass
-    
 
     def observation(self):
+        self.stepper_stop()
+        data = self.listener()
         self.geese_stop(29)
-        print("stopping")
+        c = self.stepper_degree(data)
+        print(c)
+        
+        print("stopped")
         
     def spin(self):
-        self.geese_spin()
+        self.stepper_spin()
         print("spinning")
         
 

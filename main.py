@@ -1,6 +1,7 @@
 import sys
 sys.path.append('lib')
 import Goose
+import serial
 
 import time
 from time import sleep
@@ -17,10 +18,16 @@ goose.DC_stop()
 
 def main():
     while True:
-        state  =  ''
+        
+       
+           
         button_released = goose.button_released()
 
-               
+        if button_released:
+            goose.mount_mode(goose.switch_mode())
+            
 
 if __name__ == "__main__":
+    ser = serial.Serial('/dev/ttyACM0', 2000000)
+    ser.reset_input_buffer()
     main()
